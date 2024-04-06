@@ -1,0 +1,9 @@
+DROP TABLE IF EXISTS posts;
+
+CREATE TABLE posts(
+	ID          SERIAL PRIMARY KEY,
+	Title       TEXT NOT NULL,
+	Link        TEXT NOT NULL UNIQUE,
+	Content     TEXT NOT NULL,
+	PubDate     BIGINT DEFAULT 0
+);
