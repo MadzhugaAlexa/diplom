@@ -8,12 +8,15 @@ import (
 	"news_feed/internal/entities"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type Repo struct {
 	db *pgxpool.Pool
 }
+
+var ErrNoRows = errors.New("no rows in result set")
 
 func NewRepo(db *pgxpool.Pool) *Repo {
 	return &Repo{
@@ -81,6 +84,24 @@ func (r *Repo) AddItem(item entities.Item) error {
 	}
 
 	return nil
+}
+
+func (r *Repo) ReadItem(id int) (entities.Post, error) {
+	item := entities.Post{}
+	sql := "select id, title, link, content, pubdate from posts where id=$1"
+	row := r.db.QueryRow(context.Background(), sql, id)
+
+	err := row.Scan(
+		&item.ID, &item.Title, &item.Link, &item.Content, &item.PubDate,
+	)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return item, ErrNoRows
+		}
+		return item, err
+	}
+
+	return item, nil
 }
 
 // ReadItems читает новостные посты из БД и возвращет их слайс.

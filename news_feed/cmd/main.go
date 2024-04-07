@@ -29,7 +29,6 @@ func main() {
 	h := handler.NewHandler(repo)
 	e.GET("/news/", h.GetItems)
 	e.GET("/news/:limit", h.GetItems)
-	e.File("/", "./webapp/index.html")
-	e.Static("/", "./webapp/")
-	e.Logger.Fatal(e.Start(":80"))
+	e.GET("/news/:id", h.GetItem)
+	e.Logger.Fatal(e.Start(":1111"))
 }
