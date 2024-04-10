@@ -1,6 +1,8 @@
 package main
 
 import (
+	"api-gateway/internal/entities"
+	"encoding/json"
 	"io"
 	"net/http"
 
@@ -21,12 +23,18 @@ func GetAllNews(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	var br []byte
-	br, err = io.ReadAll(resp.Body)
+	br, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return err
 	}
-	return c.String(http.StatusOK, string(br))
+
+	var items []entities.NewsFullDetailed
+	err = json.Unmarshal(br, &items)
+
+	if err != nil {
+		return err
+	}
+	return c.JSON(http.StatusOK, items)
 
 }
 
@@ -37,10 +45,17 @@ func GetOneNew(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	var br []byte
-	br, err = io.ReadAll(resp.Body)
+
+	br, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return err
 	}
-	return c.String(http.StatusOK, string(br))
+
+	var item entities.NewsFullDetailed
+	err = json.Unmarshal(br, &item)
+
+	if err != nil {
+		return err
+	}
+	return c.JSON(http.StatusOK, item)
 }
