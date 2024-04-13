@@ -1,11 +1,12 @@
 package entities
 
 type NewsFullDetailed struct {
-	ID      int
-	Title   string
-	Link    string
-	Content string
-	PubDate int64
+	ID       int
+	Title    string
+	Link     string
+	Content  string
+	PubDate  int64
+	Comments []Comment
 }
 
 type NewsShortDetailed struct {

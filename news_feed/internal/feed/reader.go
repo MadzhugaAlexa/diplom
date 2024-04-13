@@ -36,7 +36,7 @@ func read(reader FeedReader, url string, out chan<- entities.Item, ech chan<- en
 
 type RepoInterface interface {
 	AddItem(item entities.Item) error
-	ReadItems(limit int) ([]entities.Post, error)
+	ReadItems(limit int, s string) ([]entities.Post, error)
 }
 
 // Функция FeatchFeeds читает новости из RSS каналов и пишет их в БД.

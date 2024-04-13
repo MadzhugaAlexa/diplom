@@ -16,7 +16,7 @@ type Handler struct {
 }
 
 type ItemsReader interface {
-	ReadItems(int) ([]entities.Post, error)
+	ReadItems(int, string) ([]entities.Post, error)
 	ReadItem(int) (entities.Post, error)
 }
 
@@ -52,11 +52,13 @@ func (h *Handler) GetItem(c echo.Context) error {
 // По умолчанию N = 10
 func (h *Handler) GetItems(c echo.Context) error {
 	l := c.Param("limit")
+	s := c.QueryParam("s")
+	log.Printf("параметр s:%s\n", s)
 
 	var limit int
 	var err error
 	if l == "" {
-		limit = 10
+		limit = 100
 	} else {
 		limit, err = strconv.Atoi(l)
 		if err != nil {
@@ -64,7 +66,7 @@ func (h *Handler) GetItems(c echo.Context) error {
 		}
 	}
 
-	items, err := h.repo.ReadItems(limit)
+	items, err := h.repo.ReadItems(limit, s)
 	if err != nil {
 		log.Printf("Ошибка %#v\n", err)
 

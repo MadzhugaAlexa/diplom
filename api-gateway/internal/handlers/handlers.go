@@ -13,7 +13,13 @@ var RSS_PORT string = "1111"
 var COMMENTS_PORT string = "1112"
 
 func GetAllNews(c echo.Context) error {
-	resp, err := http.Get("http://localhost:" + RSS_PORT + "/news/")
+	url := "http://localhost:" + RSS_PORT + "/news"
+
+	if s := c.QueryParam("s"); s != "" {
+		url = url + "?s=" + s
+	}
+
+	resp, err := http.Get(url)
 	if err != nil {
 		return err
 	}

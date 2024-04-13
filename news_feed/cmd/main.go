@@ -27,7 +27,7 @@ func main() {
 
 	e := echo.New()
 	h := handler.NewHandler(repo)
-	e.GET("/news/", h.GetItems)
+	e.GET("/news", h.GetItems)
 	e.GET("/news/:limit", h.GetItems)
 	e.GET("/news/:id", h.GetItem)
 	e.Logger.Fatal(e.Start(":1111"))
