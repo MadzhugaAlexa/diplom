@@ -19,6 +19,6 @@ type NewsShortDetailed struct {
 
 type Comment struct {
 	ID      int
-	PostID  int
+	PostID  int `json:"post_id"`
 	Content string
 }

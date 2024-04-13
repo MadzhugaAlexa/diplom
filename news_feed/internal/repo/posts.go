@@ -105,17 +105,19 @@ func (r *Repo) ReadItem(id int) (entities.Post, error) {
 }
 
 // ReadItems читает новостные посты из БД и возвращет их слайс.
-func (r *Repo) ReadItems(limit int, s string) ([]entities.Post, error) {
+func (r *Repo) ReadItems(perPage int, page int, s string) ([]entities.Post, error) {
 	items := make([]entities.Post, 0)
 
 	sql := "select id, title, link, content, pubdate from posts"
 
+	offset := (page - 1) * perPage
+
 	if s != "" {
 		sql = sql + " where title like '%" + s + "%'"
 	}
-	sql = sql + " order by pubdate desc limit $1"
+	sql = sql + " order by pubdate desc offset $1 limit $2"
 
-	rows, err := r.db.Query(context.Background(), sql, limit)
+	rows, err := r.db.Query(context.Background(), sql, offset, perPage)
 
 	if err != nil {
 		return nil, err

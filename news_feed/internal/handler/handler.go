@@ -16,7 +16,7 @@ type Handler struct {
 }
 
 type ItemsReader interface {
-	ReadItems(int, string) ([]entities.Post, error)
+	ReadItems(perPage int, page int, s string) ([]entities.Post, error)
 	ReadItem(int) (entities.Post, error)
 }
 
@@ -51,22 +51,21 @@ func (h *Handler) GetItem(c echo.Context) error {
 // GetItems обрабатывает запрос на /news и возвращает N последних новостей
 // По умолчанию N = 10
 func (h *Handler) GetItems(c echo.Context) error {
-	l := c.Param("limit")
 	s := c.QueryParam("s")
-	log.Printf("параметр s:%s\n", s)
 
-	var limit int
-	var err error
-	if l == "" {
-		limit = 100
-	} else {
-		limit, err = strconv.Atoi(l)
-		if err != nil {
-			return err
-		}
+	perPageStr := c.QueryParam("per_page")
+	perPage, err := ParseStrQueryParam(perPageStr, 10)
+	if err != nil {
+		return err
 	}
 
-	items, err := h.repo.ReadItems(limit, s)
+	pageStr := c.QueryParam("page")
+	page, err := ParseStrQueryParam(pageStr, 1)
+	if err != nil {
+		return err
+	}
+
+	items, err := h.repo.ReadItems(perPage, page, s)
 	if err != nil {
 		log.Printf("Ошибка %#v\n", err)
 
@@ -74,4 +73,17 @@ func (h *Handler) GetItems(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, items)
+}
+
+func ParseStrQueryParam(in string, d int) (int, error) {
+	if in == "" {
+		return d, nil
+	}
+	val, err := strconv.Atoi(in)
+
+	if err != nil {
+		return 0, err
+	}
+
+	return val, nil
 }
