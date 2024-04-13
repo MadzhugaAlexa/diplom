@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"regexp"
 	"strconv"
 
 	"github.com/labstack/echo/v4"
@@ -17,6 +18,7 @@ type Handler struct {
 type CommentsRepo interface {
 	GetComments(int) ([]entities.Comment, error)
 	CreateComment(*entities.Comment) error
+	UpdateStatus(*entities.Comment) error
 }
 
 func NewHandler(r CommentsRepo) Handler {
@@ -60,5 +62,30 @@ func (h *Handler) AddComment(c echo.Context) error {
 		return err
 	}
 
+	go func() {
+		if HasBadWords(comment.Content) {
+			comment.Status = "bad"
+		} else {
+			comment.Status = "ready"
+		}
+		err := h.repo.UpdateStatus(&comment)
+		if err != nil {
+			log.Printf("failed to update status %v", comment)
+		}
+	}()
+
 	return c.JSON(http.StatusOK, comment)
+}
+
+func HasBadWords(s string) bool {
+	badWords := []string{"qwerty", "йцукен", "zxvbnm"}
+
+	for _, bad := range badWords {
+		match, _ := regexp.Match(bad, []byte(s))
+		if match {
+			return true
+		}
+	}
+
+	return false
 }

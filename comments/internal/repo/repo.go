@@ -29,6 +29,8 @@ func (r *Repo) CreateComment(c *entities.Comment) error {
 
 	sql := `INSERT INTO comments(post_id, parent_id, content, status) values($1, $2, $3, $4) returning id`
 
+	c.Status = "waiting"
+
 	post := tx.QueryRow(
 		context.Background(),
 		sql,
@@ -49,7 +51,7 @@ func (r *Repo) CreateComment(c *entities.Comment) error {
 func (r *Repo) GetComments(postId int) ([]entities.Comment, error) {
 	comments := make([]entities.Comment, 0)
 
-	sql := "select id, post_id, parent_id, content, status from comments where post_id = $1"
+	sql := "select id, post_id, parent_id, content, status from comments where post_id = $1 and status='ready'"
 	rows, err := r.db.Query(context.Background(), sql, postId)
 
 	if err != nil {
@@ -69,4 +71,32 @@ func (r *Repo) GetComments(postId int) ([]entities.Comment, error) {
 		comments = append(comments, comment)
 	}
 	return comments, nil
+}
+
+func (r *Repo) UpdateStatus(c *entities.Comment) error {
+	tx, err := r.db.Begin(context.Background())
+	if err != nil {
+		return err
+	}
+	defer func() {
+		tx.Commit(context.Background())
+	}()
+
+	sql := `UPDATE comments set status = $1 where id = $2`
+
+	post := tx.QueryRow(
+		context.Background(),
+		sql,
+		c.Status,
+		c.ID,
+	)
+
+	post.Scan(&c.ID)
+
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+
+	return nil
 }

@@ -20,24 +20,6 @@ func main() {
 	defer db.Close()
 	repo := repo.NewRepo(db)
 
-	// comment := entities.Comment{
-	// 	PostID:  1,
-	// 	Content: "content",
-	// 	Status:  "status",
-	// }
-
-	// err = repo.CreateComment(&comment)
-	// log.Printf("comment: %#v\n", comment)
-
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-
-	// comments, err := repo.GetComments(1)
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-	// log.Printf("comments: %#v\n", comments)
 	e := echo.New()
 	h := handlers.NewHandler(&repo)
 	e.GET("/comments/:post_id", h.GetComments)
