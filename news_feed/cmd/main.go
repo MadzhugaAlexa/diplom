@@ -26,6 +26,8 @@ func main() {
 	feed.FeatchFeeds(cfg, feed.LoadFeed, repo)
 
 	e := echo.New()
+
+	e.Use(handler.Logger)
 	h := handler.NewHandler(repo)
 	e.GET("/news", h.GetItems)
 	e.GET("/news/:id", h.GetItem)

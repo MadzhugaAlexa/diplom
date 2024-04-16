@@ -21,6 +21,7 @@ func main() {
 	repo := repo.NewRepo(db)
 
 	e := echo.New()
+	e.Use(handlers.Logger)
 	h := handlers.NewHandler(&repo)
 	e.GET("/comments/:post_id", h.GetComments)
 	e.POST("/comments/", h.AddComment)

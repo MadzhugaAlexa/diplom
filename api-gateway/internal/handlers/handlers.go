@@ -40,8 +40,9 @@ func GetAllNews(c echo.Context) error {
 
 func GetOneNew(c echo.Context) error {
 	id := c.Param("id")
+	requestID := c.QueryParam("request_id")
 
-	resp, err := http.Get("http://localhost:" + RSS_PORT + "/news/" + id)
+	resp, err := http.Get("http://localhost:" + RSS_PORT + "/news/" + id + "?request_id=" + requestID)
 	if err != nil {
 		return err
 	}
@@ -58,7 +59,7 @@ func GetOneNew(c echo.Context) error {
 		return err
 	}
 
-	resp, err = http.Get("http://localhost:" + COMMENTS_PORT + "/comments/" + id)
+	resp, err = http.Get("http://localhost:" + COMMENTS_PORT + "/comments/" + id + "?request_id=" + requestID)
 	if err != nil {
 		return err
 	}

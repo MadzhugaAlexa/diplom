@@ -71,7 +71,7 @@ type TestHandlerReader struct {
 	Posts []entities.Post
 }
 
-func (t *TestHandlerReader) ReadItems(int) ([]entities.Post, error) {
+func (t *TestHandlerReader) ReadItems(int, int, string) ([]entities.Post, error) {
 	return t.Posts, nil
 }
 

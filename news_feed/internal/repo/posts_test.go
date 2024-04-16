@@ -79,7 +79,7 @@ func TestReadItems(t *testing.T) {
 
 	_ = repo.AddItem(item)
 
-	items, err := repo.ReadItems(10)
+	items, err := repo.ReadItems(10, 1, "")
 	if err != nil {
 		t.Fatal("Не прочитали новости", err)
 	}

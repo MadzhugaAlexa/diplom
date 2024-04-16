@@ -16,7 +16,7 @@ func (r *fakeRepo) AddItem(item entities.Item) error {
 	r.Items = append(r.Items, item)
 	return nil
 }
-func (r *fakeRepo) ReadItems(limit int) ([]entities.Post, error) {
+func (r *fakeRepo) ReadItems(page int, per_page int, s string) ([]entities.Post, error) {
 	return []entities.Post{}, nil
 }
 

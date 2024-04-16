@@ -9,9 +9,9 @@ import (
 func main() {
 	e := echo.New()
 
+	e.Use(handlers.Logger)
 	e.GET("/news", handlers.GetAllNews)
 	e.GET("/news/:id", handlers.GetOneNew)
-	// e.GET("/comments/:post_id", h.GetComments)
 	e.POST("/comments/", handlers.AddComment)
 	e.Start(":8080")
 }
