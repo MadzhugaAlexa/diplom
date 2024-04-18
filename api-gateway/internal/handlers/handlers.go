@@ -13,7 +13,6 @@ var RSS_PORT string = "1111"
 var COMMENTS_PORT string = "1112"
 
 func GetAllNews(c echo.Context) error {
-
 	url := "http://localhost:" + RSS_PORT + "/news"
 
 	if qs := c.QueryString(); qs != "" {
@@ -77,8 +76,11 @@ func GetOneNew(c echo.Context) error {
 }
 
 func AddComment(c echo.Context) error {
+	requestID := c.QueryParam("request_id")
+
+	url := "http://localhost:" + COMMENTS_PORT + "/comments/?request_id=" + requestID
 	resp, err := http.Post(
-		"http://localhost:"+COMMENTS_PORT+"/comments/",
+		url,
 		"application/json",
 		c.Request().Body,
 	)

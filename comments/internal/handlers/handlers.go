@@ -1,11 +1,11 @@
 package handlers
 
 import (
+	"bytes"
 	"comments/internal/entities"
 	"encoding/json"
 	"log"
 	"net/http"
-	"regexp"
 	"strconv"
 
 	"github.com/labstack/echo/v4"
@@ -20,6 +20,8 @@ type CommentsRepo interface {
 	CreateComment(*entities.Comment) error
 	UpdateStatus(*entities.Comment) error
 }
+
+const CENS_PORT = "1113"
 
 func NewHandler(r CommentsRepo) Handler {
 	return Handler{
@@ -47,6 +49,14 @@ func (h *Handler) GetComments(c echo.Context) error {
 	return c.JSON(http.StatusOK, comment)
 }
 
+type Cens struct {
+	Content string
+}
+
+type CensResponse struct {
+	Valid bool
+}
+
 func (h *Handler) AddComment(c echo.Context) error {
 	body := c.Request().Body
 	comment := entities.Comment{}
@@ -62,30 +72,46 @@ func (h *Handler) AddComment(c echo.Context) error {
 		return err
 	}
 
-	go func() {
-		if HasBadWords(comment.Content) {
-			comment.Status = "bad"
-		} else {
-			comment.Status = "ready"
-		}
-		err := h.repo.UpdateStatus(&comment)
-		if err != nil {
-			log.Printf("failed to update status %v", comment)
-		}
-	}()
+	go h.ValidateComment(c, comment)
 
 	return c.JSON(http.StatusOK, comment)
 }
 
-func HasBadWords(s string) bool {
-	badWords := []string{"qwerty", "йцукен", "zxvbnm"}
+func (h *Handler) ValidateComment(c echo.Context, comment entities.Comment) {
+	cens := Cens{
+		Content: comment.Content,
+	}
+	censJSON, err := json.Marshal(cens)
+	if err != nil {
+		return
+	}
+	requestID := c.QueryParam("request_id")
+	url := "http://localhost:" + CENS_PORT + "/check_comment?request_id=" + requestID
 
-	for _, bad := range badWords {
-		match, _ := regexp.Match(bad, []byte(s))
-		if match {
-			return true
-		}
+	resp, err := http.Post(
+		url,
+		"application/json",
+		bytes.NewBuffer(censJSON),
+	)
+	if err != nil {
+		return
 	}
 
-	return false
+	valid := CensResponse{}
+	err = json.NewDecoder(resp.Body).Decode(&valid)
+	if err != nil {
+		log.Printf("ошибка: %#v\n", err)
+		return
+	}
+
+	if valid.Valid {
+		comment.Status = "ready"
+	} else {
+		comment.Status = "bad"
+	}
+
+	err = h.repo.UpdateStatus(&comment)
+	if err != nil {
+		log.Printf("failed to update status %v", comment)
+	}
 }

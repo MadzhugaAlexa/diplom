@@ -35,7 +35,7 @@ func Logger(next echo.HandlerFunc) echo.HandlerFunc {
 		}
 
 		status := c.Response().Status
-		msg = msg + " status = " + strconv.Itoa(status)
+		msg = msg + " код ответа = " + strconv.Itoa(status)
 
 		return nil
 	}

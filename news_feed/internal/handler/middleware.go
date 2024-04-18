@@ -13,9 +13,9 @@ func Logger(next echo.HandlerFunc) echo.HandlerFunc {
 		allParams := c.QueryParams()
 		path := c.Path()
 		method := c.Request().Method
-		requiestID := c.QueryParam("request_id")
+		requestID := c.QueryParam("request_id")
 
-		msg := fmt.Sprintf("Request[%s] %s %s with params:", requiestID, method, path)
+		msg := fmt.Sprintf("Request[%s] %s %s with params:", requestID, method, path)
 		for _, pname := range c.ParamNames() {
 			msg = msg + fmt.Sprintf(" %s=%v", pname, c.Param(pname))
 		}
@@ -35,7 +35,7 @@ func Logger(next echo.HandlerFunc) echo.HandlerFunc {
 		}
 
 		status := c.Response().Status
-		msg = msg + " status = " + strconv.Itoa(status)
+		msg = msg + " код ответа = " + strconv.Itoa(status)
 
 		return nil
 	}
