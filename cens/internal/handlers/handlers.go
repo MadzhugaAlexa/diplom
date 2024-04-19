@@ -26,10 +26,11 @@ func CheckComment(c echo.Context) error {
 		return err
 	}
 
-	check := Check{}
-	check.Valid = !HasBadWords(comment.Content)
-
-	return c.JSON(http.StatusOK, check)
+	if HasBadWords(comment.Content) {
+		return c.String(http.StatusBadRequest, "")
+	} else {
+		return c.String(http.StatusOK, "")
+	}
 }
 
 func HasBadWords(s string) bool {
