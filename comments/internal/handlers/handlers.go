@@ -17,7 +17,6 @@ type Handler struct {
 type CommentsRepo interface {
 	GetComments(int) ([]entities.Comment, error)
 	CreateComment(*entities.Comment) error
-	UpdateStatus(*entities.Comment) error
 }
 
 func NewHandler(r CommentsRepo) Handler {

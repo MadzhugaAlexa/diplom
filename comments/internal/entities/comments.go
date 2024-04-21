@@ -5,5 +5,4 @@ type Comment struct {
 	PostID   int `json:"post_id"`
 	ParentID int `json:"parent_id"`
 	Content  string
-	Status   string
 }
