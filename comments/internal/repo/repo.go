@@ -51,7 +51,7 @@ func (r *Repo) CreateComment(c *entities.Comment) error {
 func (r *Repo) GetComments(postId int) ([]entities.Comment, error) {
 	comments := make([]entities.Comment, 0)
 
-	sql := "select id, post_id, parent_id, content, status from comments where post_id = $1 and status='ready'"
+	sql := "select id, post_id, parent_id, content, status from comments where post_id = $1"
 	rows, err := r.db.Query(context.Background(), sql, postId)
 
 	if err != nil {

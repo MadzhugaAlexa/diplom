@@ -7,7 +7,6 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"sync"
 
 	"github.com/labstack/echo/v4"
 )
@@ -51,35 +50,43 @@ type CommentsResponse struct {
 }
 
 func GetOneNew(c echo.Context) error {
-	var wg sync.WaitGroup
-	wg.Add(2)
 	id := c.Param("id")
 	requestID := c.QueryParam("request_id")
 
-	var rssResponse RssResponse
-	go LoadPost(&wg, &rssResponse, id, requestID)
+	rssResponse := RssResponse{}
+	commentsResponse := CommentsResponse{}
+
+	postCh := make(chan RssResponse)
+	go LoadPost(postCh, id, requestID)
+
+	commentsCh := make(chan CommentsResponse)
+	go LoadPostComments(commentsCh, id, requestID)
+
+	for i := 0; i < 2; i++ {
+		select {
+		case resp := <-postCh:
+			rssResponse = resp
+		case resp := <-commentsCh:
+			commentsResponse = resp
+		}
+	}
 
 	if rssResponse.Error != nil {
 		return rssResponse.Error
 	}
 
-	commentsResponse := CommentsResponse{}
-	go LoadPostComments(&wg, &commentsResponse, id, requestID)
-
 	if commentsResponse.Error != nil {
 		return commentsResponse.Error
 	}
 
-	wg.Wait()
 	post := rssResponse.Post
 	post.Comments = commentsResponse.Comments
 
 	return c.JSON(http.StatusOK, post)
 }
 
-func LoadPost(wg *sync.WaitGroup, result *RssResponse, id string, requestID string) {
-	defer wg.Done()
-
+func LoadPost(out chan RssResponse, id string, requestID string) {
+	result := RssResponse{}
 	resp, err := http.Get("http://localhost:" + RSS_PORT + "/news/" + id + "?request_id=" + requestID)
 	if err != nil {
 		result.Error = err
@@ -95,11 +102,12 @@ func LoadPost(wg *sync.WaitGroup, result *RssResponse, id string, requestID stri
 	if err != nil {
 		result.Error = err
 	}
+
+	out <- result
 }
 
-func LoadPostComments(wg *sync.WaitGroup, response *CommentsResponse, id string, requestID string) {
-	defer wg.Done()
-
+func LoadPostComments(out chan CommentsResponse, id string, requestID string) {
+	response := CommentsResponse{}
 	resp, err := http.Get("http://localhost:" + COMMENTS_PORT + "/comments/" + id + "?request_id=" + requestID)
 	if err != nil {
 		response.Error = err
@@ -113,6 +121,7 @@ func LoadPostComments(wg *sync.WaitGroup, response *CommentsResponse, id string,
 	if err != nil {
 		response.Error = err
 	}
+	out <- response
 }
 func AddComment(c echo.Context) error {
 	requestID := c.QueryParam("request_id")
