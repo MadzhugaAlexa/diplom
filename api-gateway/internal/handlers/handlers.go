@@ -16,15 +16,24 @@ var COMMENTS_PORT string = "1112"
 
 func GetAllNews(c echo.Context) error {
 	url := "http://localhost:" + RSS_PORT + "/news"
+	ip := GetIP(c)
 
 	if qs := c.QueryString(); qs != "" {
 		url = url + "?" + qs
 	}
 
-	resp, err := http.Get(url)
+	client := http.Client{}
+	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return err
 	}
+
+	req.Header.Set("X-Forwarded-For", ip)
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+
 	br, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return err
@@ -49,25 +58,44 @@ type CommentsResponse struct {
 	Error    error
 }
 
+func GetIP(c echo.Context) string {
+	ips := c.Request().Header["X-Forwarded-For"]
+	var ip string
+
+	if len(ips) > 0 {
+		ip = ips[0]
+	}
+
+	return ip
+}
+
 func GetOneNew(c echo.Context) error {
 	id := c.Param("id")
+	ip := GetIP(c)
+
 	requestID := c.QueryParam("request_id")
 
 	rssResponse := RssResponse{}
 	commentsResponse := CommentsResponse{}
 
 	postCh := make(chan RssResponse)
-	go LoadPost(postCh, id, requestID)
+	go LoadPost(postCh, id, requestID, ip)
 
 	commentsCh := make(chan CommentsResponse)
-	go LoadPostComments(commentsCh, id, requestID)
+	go LoadPostComments(commentsCh, id, requestID, ip)
 
 	for i := 0; i < 2; i++ {
 		select {
 		case resp := <-postCh:
 			rssResponse = resp
+			if rssResponse.Error != nil {
+				return rssResponse.Error
+			}
 		case resp := <-commentsCh:
 			commentsResponse = resp
+			if commentsResponse.Error != nil {
+				return commentsResponse.Error
+			}
 		}
 	}
 
@@ -85,9 +113,21 @@ func GetOneNew(c echo.Context) error {
 	return c.JSON(http.StatusOK, post)
 }
 
-func LoadPost(out chan RssResponse, id string, requestID string) {
+func LoadPost(out chan RssResponse, id string, requestID string, ip string) {
 	result := RssResponse{}
-	resp, err := http.Get("http://localhost:" + RSS_PORT + "/news/" + id + "?request_id=" + requestID)
+	url := "http://localhost:" + RSS_PORT + "/news/" + id + "?request_id=" + requestID
+
+	client := http.Client{}
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		result.Error = err
+		out <- result
+		return
+	}
+
+	req.Header.Set("X-Forwarded-For", ip)
+	resp, err := client.Do(req)
+
 	if err != nil {
 		result.Error = err
 	}
@@ -106,11 +146,22 @@ func LoadPost(out chan RssResponse, id string, requestID string) {
 	out <- result
 }
 
-func LoadPostComments(out chan CommentsResponse, id string, requestID string) {
+func LoadPostComments(out chan CommentsResponse, id string, requestID string, ip string) {
 	response := CommentsResponse{}
-	resp, err := http.Get("http://localhost:" + COMMENTS_PORT + "/comments/" + id + "?request_id=" + requestID)
+
+	url := "http://localhost:" + COMMENTS_PORT + "/comments/" + id + "?request_id=" + requestID
+
+	client := http.Client{}
+	req, err := http.NewRequest("GET", url, nil)
+
 	if err != nil {
 		response.Error = err
+	}
+
+	req.Header.Set("X-Forwarded-For", ip)
+	resp, err := client.Do(req)
+	if err != nil {
+		return
 	}
 
 	br, err := io.ReadAll(resp.Body)
@@ -123,6 +174,7 @@ func LoadPostComments(out chan CommentsResponse, id string, requestID string) {
 	}
 	out <- response
 }
+
 func AddComment(c echo.Context) error {
 	requestID := c.QueryParam("request_id")
 
@@ -151,12 +203,16 @@ func AddComment(c echo.Context) error {
 
 	url := "http://localhost:" + COMMENTS_PORT + "/comments/?request_id=" + requestID
 
-	resp, err := http.Post(
-		url,
-		"application/json",
-		bytes.NewReader(body),
-	)
+	client := http.Client{}
+	req, err := http.NewRequest("POST", url, bytes.NewReader(body))
 
+	if err != nil {
+		return err
+	}
+
+	ip := GetIP(c)
+	req.Header.Set("X-Forwarded-For", ip)
+	resp, err := client.Do(req)
 	if err != nil {
 		return err
 	}
@@ -185,11 +241,17 @@ func ValidateComment(c echo.Context, comment entities.Comment) (bool, error) {
 	requestID := c.QueryParam("request_id")
 	url := "http://localhost:" + CENS_PORT + "/check_comment?request_id=" + requestID
 
-	resp, err := http.Post(
-		url,
-		"application/json",
-		bytes.NewBuffer(censJSON),
-	)
+	client := http.Client{}
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(censJSON))
+
+	if err != nil {
+		return false, err
+	}
+
+	ip := GetIP(c)
+	req.Header.Set("X-Forwarded-For", ip)
+	resp, err := client.Do(req)
+
 	if err != nil {
 		return false, err
 	}

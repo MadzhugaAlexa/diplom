@@ -14,8 +14,13 @@ func Logger(next echo.HandlerFunc) echo.HandlerFunc {
 		path := c.Path()
 		method := c.Request().Method
 		requiestID := c.QueryParam("request_id")
+		ips := c.Request().Header["X-Forwarded-For"]
+		var ip string
+		if len(ips) > 0 {
+			ip = ips[0]
+		}
 
-		msg := fmt.Sprintf("Request[%s] %s %s with params:", requiestID, method, path)
+		msg := fmt.Sprintf("[IP: %s] Request[%s] %s %s with params:", ip, requiestID, method, path)
 		for _, pname := range c.ParamNames() {
 			msg = msg + fmt.Sprintf(" %s=%v", pname, c.Param(pname))
 		}
