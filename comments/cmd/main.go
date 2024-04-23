@@ -5,13 +5,18 @@ import (
 	"comments/internal/repo"
 	"context"
 	"log"
+	"os"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/labstack/echo/v4"
 )
 
 func main() {
-	DB_URL := "postgres://alexa:alexa@localhost:5432/comments"
+	DB_URL := os.Getenv("DB")
+	if DB_URL == "" {
+		DB_URL = "postgres://alexa:alexa@localhost:5432/comments"
+	}
+
 	db, err := pgxpool.New(context.Background(), DB_URL)
 
 	if err != nil {

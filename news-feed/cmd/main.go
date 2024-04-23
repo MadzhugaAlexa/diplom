@@ -7,13 +7,17 @@ import (
 	"news_feed/internal/feed"
 	"news_feed/internal/handler"
 	"news_feed/internal/repo"
+	"os"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/labstack/echo/v4"
 )
 
 func main() {
-	DB_URL := "postgres://alexa:alexa@localhost:5432/rss"
+	DB_URL := os.Getenv("DB")
+	if DB_URL == "" {
+		DB_URL = "postgres://alexa:alexa@localhost:5432/rss"
+	}
 
 	db, err := pgxpool.New(context.Background(), DB_URL)
 	if err != nil {
